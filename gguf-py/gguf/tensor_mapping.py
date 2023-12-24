@@ -238,15 +238,11 @@ class TensorNameMap:
 
     def get_name(self, key: str, try_suffixes: Sequence[str] = ()) -> str | None:
         result = self.get_type_and_name(key, try_suffixes = try_suffixes)
-        if result is None:
-            return None
-        return result[1]
+        return None if result is None else result[1]
 
     def get_type(self, key: str, try_suffixes: Sequence[str] = ()) -> MODEL_TENSOR | None:
         result = self.get_type_and_name(key, try_suffixes = try_suffixes)
-        if result is None:
-            return None
-        return result[0]
+        return None if result is None else result[0]
 
     def __getitem__(self, key: str) -> str:
         try:

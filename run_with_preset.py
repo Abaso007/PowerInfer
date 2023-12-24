@@ -98,14 +98,12 @@ for cli_arg in cli_args:
 
     if cli_arg == "logit-bias":
         for token, bias in value.items():
-            command_list.append("--logit-bias")
-            command_list.append(f"{token}{bias:+}")
+            command_list.extend(("--logit-bias", f"{token}{bias:+}"))
         continue
 
     if cli_arg == "reverse-prompt" and not isinstance(value, str):
         for rp in value:
-            command_list.append("--reverse-prompt")
-            command_list.append(str(rp))
+            command_list.extend(("--reverse-prompt", str(rp)))
         continue
 
     command_list.append(f"--{cli_arg}")
@@ -117,7 +115,7 @@ for cli_arg in cli_args:
     value = str(value)
 
     if value != "True":
-        command_list.append(str(value))
+        command_list.append(value)
 
 num_unused = len(props)
 if num_unused > 10:

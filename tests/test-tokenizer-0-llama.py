@@ -13,7 +13,7 @@ args = parser.parse_args()
 
 dir_tokenizer = args.dir_tokenizer
 
-tokenizer = SentencePieceProcessor(dir_tokenizer + '/tokenizer.model')
+tokenizer = SentencePieceProcessor(f'{dir_tokenizer}/tokenizer.model')
 
 tests = [
         "",
@@ -53,12 +53,12 @@ for text in tests:
     print(tokenizer.encode(text, add_bos=False))
     print(tokenizer.decode(tokenizer.encode(text, add_bos=False)))
 
-print("'" + tokenizer.id_to_piece(15043) + "'") # '_Hello'
-print("'" + tokenizer.id_to_piece(29871) + "'") # '_'
-print("'" + tokenizer.decode([15043]) + "'")        # 'Hello'
-print("'" + tokenizer.decode([15043, 15043]) + "'") # 'Hello Hello'
-print("'" + tokenizer.decode([29871, 15043]) + "'")               # ' Hello'
-print("'" + tokenizer.decode([29871, 15043, 29871, 15043]) + "'") # ' Hello  Hello'
+print(f"'{tokenizer.id_to_piece(15043)}'")
+print(f"'{tokenizer.id_to_piece(29871)}'")
+print(f"'{tokenizer.decode([15043])}'")
+print(f"'{tokenizer.decode([15043, 15043])}'")
+print(f"'{tokenizer.decode([29871, 15043])}'")
+print(f"'{tokenizer.decode([29871, 15043, 29871, 15043])}'")
 
 print("\n\ntests for C++:\n")
 for text in tests:
@@ -66,7 +66,7 @@ for text in tests:
 
     k = text.replace('\n', '\\n')
     k = k.replace('\t', '\\t')
-    k = '"' + k + '"'
+    k = f'"{k}"'
     print("{ %-24s, { " % k, end='')
     for x in res:
         print("%7d," % x, end='')
@@ -77,10 +77,9 @@ print(tokenizer.encode('world'))
 print(tokenizer.encode(' world'))
 print(tokenizer.encode('hello world'))
 
-fname_tok = args.fname_tok
-if fname_tok:
+if fname_tok := args.fname_tok:
     print('tokenizing file: ', fname_tok)
-    fname_out = fname_tok + '.tok'
+    fname_out = f'{fname_tok}.tok'
     with open(fname_tok, 'r', encoding='utf-8') as f:
         lines = f.readlines()
         s = ''.join(lines)

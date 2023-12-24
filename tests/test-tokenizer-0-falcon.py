@@ -56,7 +56,7 @@ for text in tests:
 
     k = text.replace('\n', '\\n')
     k = k.replace('\t', '\\t')
-    k = '"' + k + '"'
+    k = f'"{k}"'
     print("{ %-24s, { " % k, end='')
     for x in res:
         print("%7d," % x, end='')
@@ -67,10 +67,9 @@ print(tokenizer.encode('world'))
 print(tokenizer.encode(' world'))
 print(tokenizer.encode('hello world'))
 
-fname_tok = args.fname_tok
-if fname_tok:
+if fname_tok := args.fname_tok:
     print('tokenizing file: ', fname_tok)
-    fname_out = fname_tok + '.tok'
+    fname_out = f'{fname_tok}.tok'
     with open(fname_tok, 'r', encoding='utf-8') as f:
         lines = f.readlines()
         s = ''.join(lines)

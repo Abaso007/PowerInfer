@@ -136,12 +136,9 @@ class Model:
 
     @staticmethod
     def count_model_parts(dir_model: Path, prefix: str) -> int:
-        num_parts = 0
-        for filename in os.listdir(dir_model):
-            if filename.endswith(prefix):
-                num_parts += 1
-
-        return num_parts
+        return sum(
+            1 for filename in os.listdir(dir_model) if filename.endswith(prefix)
+        )
 
     @staticmethod
     def load_hparams(dir_model):
@@ -786,8 +783,8 @@ class PersimmonModel(Model):
         self.gguf_writer.add_embedding_length(hidden_size)
         self.gguf_writer.add_block_count(block_count)
         self.gguf_writer.add_feed_forward_length(self.hparams["intermediate_size"])
-        self.gguf_writer.add_rope_dimension_count(hidden_size // head_count)
-        self.gguf_writer.add_head_count(head_count)
+        self.gguf_writer.add_rope_dimension_count(hidden_size // head_count_kv)
+        self.gguf_writer.add_head_count(head_count_kv)
         self.gguf_writer.add_head_count_kv(head_count_kv)
         self.gguf_writer.add_rope_freq_base(self.hparams["rope_theta"])
         self.gguf_writer.add_layer_norm_eps(self.hparams["layer_norm_eps"])

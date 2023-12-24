@@ -36,8 +36,9 @@ New quant types (recommended):
 - F16: extremely large, virtually no quality loss - not recommended
 - F32: absolutely huge, lossless - not recommended
 """
+
 import subprocess
-subprocess.run(f"pip install huggingface-hub==0.16.4", shell=True, check=True)
+subprocess.run("pip install huggingface-hub==0.16.4", shell=True, check=True)
 
 import argparse
 import os
@@ -62,19 +63,18 @@ def main(model, model_type, outname, outdir, quants, keep_fp16):
     os.makedirs(outdir, exist_ok=True)
 
     print("Building llama.cpp")
-    subprocess.run(f"cd .. && make quantize", shell=True, check=True)
+    subprocess.run("cd .. && make quantize", shell=True, check=True)
 
     fp16 = f"{outdir}/{outname}.gguf.fp16.bin"
 
     print(f"Making unquantised GGUF at {fp16}")
-    if not os.path.isfile(fp16):
-        if model_type != "llama":
-            subprocess.run(f"python3 ../convert-{model_type}-hf-to-gguf.py {model} 1 --outfile {fp16}", shell=True, check=True)
-        else:
-            subprocess.run(f"python3 ../convert.py {model} --outtype f16 --outfile {fp16}", shell=True, check=True)
-    else:
+    if os.path.isfile(fp16):
         print(f"Unquantised GGML already exists at: {fp16}")
 
+    elif model_type != "llama":
+        subprocess.run(f"python3 ../convert-{model_type}-hf-to-gguf.py {model} 1 --outfile {fp16}", shell=True, check=True)
+    else:
+        subprocess.run(f"python3 ../convert.py {model} --outtype f16 --outfile {fp16}", shell=True, check=True)
     print("Making quants")
     for type in quants:
         outfile = f"{outdir}/{outname}.gguf.{type}.bin"

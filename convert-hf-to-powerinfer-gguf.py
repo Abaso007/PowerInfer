@@ -165,12 +165,9 @@ class Model(ABC):
 
     @staticmethod
     def count_model_parts(dir_model: Path, prefix: str) -> int:
-        num_parts = 0
-        for filename in os.listdir(dir_model):
-            if filename.endswith(prefix):
-                num_parts += 1
-
-        return num_parts
+        return sum(
+            1 for filename in os.listdir(dir_model) if filename.endswith(prefix)
+        )
 
     @staticmethod
     def load_hparams(dir_model):
@@ -214,7 +211,7 @@ class Model(ABC):
         arch = self.hparams["architectures"][0]
         if arch == "FalconForCausalLM":
             return gguf.MODEL_ARCH.FALCON
-        if arch == "RWForCausalLM" or arch == "LlamaForCausalLM":
+        if arch in ["RWForCausalLM", "LlamaForCausalLM"]:
             return gguf.MODEL_ARCH.LLAMA
 
         raise NotImplementedError(f'Architecture "{arch}" not supported!')
@@ -230,9 +227,7 @@ class Model(ABC):
         arch_tensor_key = tensor_map.get_name(key, try_suffixes=try_suffixes)
         if arch_tensor_key is not None:
             return arch_tensor_key
-        # check and handle ReluMLP layers
-        mlp_match = re.match(r"^blk\.\d+\.fc\d\.weight$", key)
-        if mlp_match:
+        if mlp_match := re.match(r"^blk\.\d+\.fc\d\.weight$", key):
             return mlp_match.group(0)
         return None
 

@@ -128,7 +128,7 @@ class GGUFReader:
     def _get(
         self, offset: int, dtype: npt.DTypeLike, count: int = 1, override_order: None | Literal['I' | 'S' | '<'] = None,
     ) -> npt.NDArray[Any]:
-        count = int(count)
+        count = count
         itemsize = int(np.empty([], dtype = dtype).itemsize)
         end_offs = offset + itemsize * count
         return (

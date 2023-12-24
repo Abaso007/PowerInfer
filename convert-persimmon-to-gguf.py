@@ -12,7 +12,7 @@ import gguf
 def _flatten_dict(dct, tensors, prefix=None):
     assert isinstance(dct, dict)
     for key in dct.keys():
-        new_prefix = prefix + '.' + key if prefix is not None else key
+        new_prefix = f'{prefix}.{key}' if prefix is not None else key
         if isinstance(dct[key], torch.Tensor):
             tensors[new_prefix] = dct[key]
         elif isinstance(dct[key], dict):
@@ -51,7 +51,6 @@ def _get_sentencepiece_tokenizer_info(dir_model: Path):
         tokens.append(text)
         scores.append(score)
         toktypes.append(toktype)
-        pass
     return tokens, scores, toktypes
 
 def main():
@@ -82,8 +81,8 @@ def main():
     gguf_writer.add_embedding_length(hidden_size)
     gguf_writer.add_block_count(block_count)
     gguf_writer.add_feed_forward_length(hparams.ffn_hidden_size)
-    gguf_writer.add_rope_dimension_count(hidden_size // head_count)
-    gguf_writer.add_head_count(head_count)
+    gguf_writer.add_rope_dimension_count(hidden_size // head_count_kv)
+    gguf_writer.add_head_count(head_count_kv)
     gguf_writer.add_head_count_kv(head_count_kv)
     gguf_writer.add_rope_freq_base(hparams.rotary_emb_base)
     gguf_writer.add_layer_norm_eps(hparams.layernorm_epsilon)
@@ -98,8 +97,7 @@ def main():
 
     tensor_map = gguf.get_tensor_name_map(arch, block_count)
     print(tensor_map)
-    for name in tensors.keys():
-        data = tensors[name]
+    for name, data in tensors.items():
         if name.endswith(".self_attention.rotary_emb.inv_freq"):
             continue
         old_dtype = data.dtype
@@ -107,10 +105,10 @@ def main():
         data = data.to(torch.float32).squeeze().numpy()
         new_name = tensor_map.get_name(name, try_suffixes = (".weight", ".bias"))
         if new_name is None:
-            print("Can not map tensor '" + name + "'")
+            print(f"Can not map tensor '{name}'")
             sys.exit()
         n_dims = len(data.shape)
-        print(new_name + ", n_dims = " + str(n_dims) + ", " + str(old_dtype) + " --> " + str(data.dtype))
+        print(f"{new_name}, n_dims = {n_dims}, {str(old_dtype)} --> {str(data.dtype)}")
         gguf_writer.add_tensor(new_name, data)
     print("gguf: write header")
     gguf_writer.write_header_to_file()

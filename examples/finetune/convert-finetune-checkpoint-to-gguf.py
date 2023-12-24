@@ -73,33 +73,37 @@ class Tensor:
         self.ne = ne
         self.nbytes = 0
         if self.dtype == 'f':
-            if len(self.ne) == 0:
-                self.nbytes = 0
-            else:
-                self.nbytes = int(np.product(self.ne)) * 4
+            self.nbytes = 0 if len(self.ne) == 0 else int(np.product(self.ne)) * 4
         else:
             raise ValueError(f"Unhandled data type '{self.dtype}'")
 
     def load(self, data, offset):
-        nd = struct.unpack('<I', bytes(data[offset:offset + 4]))[0]; offset += 4
-        namelen = struct.unpack('<I', bytes(data[offset:offset + 4]))[0]; offset += 4
-        dtype = struct.unpack('<I', bytes(data[offset:offset + 4]))[0]; offset += 4
+        nd = struct.unpack('<I', bytes(data[offset:offset + 4]))[0]
+        offset += 4
+        namelen = struct.unpack('<I', bytes(data[offset:offset + 4]))[0]
+        offset += 4
+        dtype = struct.unpack('<I', bytes(data[offset:offset + 4]))[0]
+        offset += 4
 
         assert(nd == len(self.ne))
         ne = []
-        for d in range(nd):
-            n = struct.unpack('<I', bytes(data[offset:offset + 4]))[0]; offset += 4
+        for _ in range(nd):
+            n = struct.unpack('<I', bytes(data[offset:offset + 4]))[0]
+            offset += 4
             ne.append(n)
 
         if tuple(ne) != tuple(self.ne):
-            raise ValueError(f"Tensor.load: Expected number of elements {str(self.ne)} does not match what is read from file {str(ne)}")
+            raise ValueError(
+                f"Tensor.load: Expected number of elements {str(self.ne)} does not match what is read from file {ne}"
+            )
 
         if self.dtype == 'f':
             assert(dtype == 0)
         else:
             raise ValueError(f"Unhandled data type '{self.dtype}'")
 
-        self.name = bytes(data[offset:offset+namelen]); offset += namelen
+        self.name = bytes(data[offset:offset+namelen])
+        offset += namelen
         # 32-byte alignment
         offset += (0 - offset) & 31
         self.data = data[offset:offset+self.nbytes]
@@ -107,8 +111,7 @@ class Tensor:
         return offset
 
     def max_storage_size(self):
-        result = 0
-        result += 4 # nd
+        result = 0 + 4
         result += 4 # namelen
         result += 4 # dtype
         result += len(self.ne)*8 # ne
@@ -135,11 +138,16 @@ class OptimizationContext:
         if self.version != 1:
             raise ValueError('Invalid version of optimization context in checkpoint file')
 
-        self.past    = struct.unpack('<i', bytes(data[offset:offset + 4]))[0];  offset += 4
-        self.lbfgs_m = struct.unpack('<i', bytes(data[offset:offset + 4]))[0];  offset += 4
-        self.nx      = struct.unpack('N',  bytes(data[offset:offset + 8]))[0];  offset += 8
-        self.iter    = struct.unpack('<i', bytes(data[offset:offset + 4]))[0];  offset += 4
-        self.just_initialized = bool(struct.unpack('<i', bytes(data[offset:offset + 4]))[0]);  offset += 4
+        self.past    = struct.unpack('<i', bytes(data[offset:offset + 4]))[0]
+        offset += 4
+        self.lbfgs_m = struct.unpack('<i', bytes(data[offset:offset + 4]))[0]
+        offset += 4
+        self.nx      = struct.unpack('N',  bytes(data[offset:offset + 8]))[0]
+        offset += 8
+        self.iter    = struct.unpack('<i', bytes(data[offset:offset + 4]))[0]
+        offset += 4
+        self.just_initialized = bool(struct.unpack('<i', bytes(data[offset:offset + 4]))[0])
+        offset += 4
 
         self.adam_m  = Tensor('f', [self.nx])
         self.adam_v  = Tensor('f', [self.nx])
@@ -158,15 +166,27 @@ class OptimizationContext:
 
         # forgot to save type in version 1:
         # guess self.type from number of remaining bytes
-        size_type_0 = 12 + sum([t.max_storage_size() for t in
-                                [self.adam_m, self.adam_v]
-                                +([self.adam_pf] if (self.past > 0) else [])])
-        size_type_1 = 24 + sum([t.max_storage_size() for t in
-                                [self.lbfgs_x, self.lbfgs_xp, self.lbfgs_g,
-                                 self.lbfgs_gp, self.lbfgs_d, self.lbfgs_pf,
-                                 self.lbfgs_lmal, self.lbfgs_lmys,
-                                 self.lbfgs_lms, self.lbfgs_lmy]
-                                 +([self.lbfgs_pf] if (self.past > 0) else [])])
+        size_type_0 = 12 + sum(
+            t.max_storage_size()
+            for t in [self.adam_m, self.adam_v]
+            + ([self.adam_pf] if (self.past > 0) else [])
+        )
+        size_type_1 = 24 + sum(
+            t.max_storage_size()
+            for t in [
+                self.lbfgs_x,
+                self.lbfgs_xp,
+                self.lbfgs_g,
+                self.lbfgs_gp,
+                self.lbfgs_d,
+                self.lbfgs_pf,
+                self.lbfgs_lmal,
+                self.lbfgs_lmys,
+                self.lbfgs_lms,
+                self.lbfgs_lmy,
+            ]
+            + ([self.lbfgs_pf] if (self.past > 0) else [])
+        )
         # due to alignment padding the size might not by exact
         # but the difference in size for both types is significant,
         # so we can just use whichever is closest
@@ -430,17 +450,24 @@ class LoraCheckpoint:
         self.opt_ctx = OptimizationContext()
 
     def load(self, data, offset):
-        magic   = bytes(reversed(data[offset:offset + 4])); offset += 4
+        magic   = bytes(reversed(data[offset:offset + 4]))
+        offset += 4
         if magic != b'ggcl':
-            raise ValueError(f"File header magic indicates, that this is no finetune-lora checkpoint file. Expected 'ggcl', Got '{str(magic)}'")
+            raise ValueError(
+                f"File header magic indicates, that this is no finetune-lora checkpoint file. Expected 'ggcl', Got '{magic}'"
+            )
 
-        self.version = struct.unpack('<I', bytes(data[offset:offset + 4]))[0]; offset += 4
+        self.version = struct.unpack('<I', bytes(data[offset:offset + 4]))[0]
+        offset += 4
         if self.version != 0:
             raise ValueError('Invalid version of checkpoint file')
 
-        self.train_its     = struct.unpack('<I', bytes(data[offset:offset + 4]))[0]; offset += 4
-        self.train_samples = struct.unpack('<I', bytes(data[offset:offset + 4]))[0]; offset += 4
-        self.train_tokens  = struct.unpack('<I', bytes(data[offset:offset + 4]))[0]; offset += 4
+        self.train_its     = struct.unpack('<I', bytes(data[offset:offset + 4]))[0]
+        offset += 4
+        self.train_samples = struct.unpack('<I', bytes(data[offset:offset + 4]))[0]
+        offset += 4
+        self.train_tokens  = struct.unpack('<I', bytes(data[offset:offset + 4]))[0]
+        offset += 4
 
         offset = self.model.load(data, offset)
         offset = self.opt_ctx.load(data, offset)
