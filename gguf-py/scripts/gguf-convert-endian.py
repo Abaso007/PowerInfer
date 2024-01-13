@@ -24,10 +24,7 @@ def convert_byteorder(reader: gguf.GGUFReader, args: argparse.Namespace) -> None
         # Sorry PDP or other weird systems that don't use BE or LE.
         host_endian = "big"
         swapped_endian = "little"
-    if reader.byte_order == "S":
-        file_endian = swapped_endian
-    else:
-        file_endian = host_endian
+    file_endian = swapped_endian if reader.byte_order == "S" else host_endian
     order = host_endian if args.order == "native" else args.order
     print(f"* Host is {host_endian.upper()} endian, GGUF file seems to be {file_endian.upper()} endian")
     if file_endian == order:

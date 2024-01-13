@@ -11,11 +11,11 @@ def sha256sum(file):
     mv = memoryview(b)
     with open(file, 'rb', buffering=0) as f:
         while True:
-            n = f.readinto(mv)
-            if not n:
-                break
-            file_hash.update(mv[:n])
+            if n := f.readinto(mv):
+                file_hash.update(mv[:n])
 
+            else:
+                break
     return file_hash.hexdigest()
 
 
@@ -54,12 +54,8 @@ for line in hash_list:
         file_hash = sha256sum(file_path)
 
         # Compare the file hash with the expected hash
-        if file_hash == hash_value:
-            valid_checksum = "V"
-            file_missing = ""
-        else:
-            valid_checksum = ""
-            file_missing = ""
+        valid_checksum = "V" if file_hash == hash_value else ""
+        file_missing = ""
     else:
         valid_checksum = ""
         file_missing = "X"

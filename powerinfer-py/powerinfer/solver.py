@@ -28,33 +28,25 @@ def solve_gpu_split(
         values += freq
 
     # Padding zero values for additional constraints
-    for i in range(layer):
+    for _ in range(layer):
         values += [0.0]
     c = np.array(values, dtype=float)
     c = matrix(c)
 
     # Setting capacity and neuron count per batch
     CAP = capacity
-    CAP = int(CAP / batch)
-    neuron = int(neuron / batch)
-    coeff = []
-    h = []
-
-    # Constraint 1: Total neuron activation constraint
-    lst = []
-    for i in range(neuron * layer):
-        lst.append(1)
-    for i in range(layer):
-        lst.append(0)
-    coeff.append(lst)
-    h.append(CAP)
-
+    CAP //= batch
+    neuron //= batch
+    lst = [1 for _ in range(neuron * layer)]
+    lst.extend(0 for _ in range(layer))
+    coeff = [lst]
+    h = [CAP]
     # Constraint 2: Threshold constraint for GPU split per layer
     for i in range(layer):
         lst = [0] * (neuron * layer + layer)
         for j in range(neuron):
             lst[i * neuron + j] = -1
-        lst[neuron * layer + i] = int(threshold / batch)
+        lst[neuron * layer + i] = threshold // batch
         coeff.append(lst)
         h.append(0)
 
@@ -83,8 +75,4 @@ def solve_gpu_split(
     ans = list(x)
     print(f"Total Activation Units: {sum(ans)}")
 
-    aligned_lst = []
-    for i in range(layer):
-        aligned_lst.append(sum(ans[i * neuron:i * neuron + neuron] * batch))
-
-    return aligned_lst
+    return [sum(ans[i * neuron:i * neuron + neuron] * batch) for i in range(layer)]

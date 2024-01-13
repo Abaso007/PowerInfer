@@ -45,14 +45,13 @@ def reverse_hf_part(weights: NDArray, n_part: int) -> NDArray:
         return weights[r * n_part : r * n_part + r, ...]
 
 def count_model_parts(dir_model: str) -> int:
-    num_parts = 0
-
-    for filename in os.listdir(dir_model):
-        if filename.startswith("pytorch_model-"):
-            num_parts += 1
-
+    num_parts = sum(
+        1
+        for filename in os.listdir(dir_model)
+        if filename.startswith("pytorch_model-")
+    )
     if num_parts > 0:
-        print("gguf: found " + str(num_parts) + " model parts")
+        print(f"gguf: found {str(num_parts)} model parts")
 
     return num_parts
 

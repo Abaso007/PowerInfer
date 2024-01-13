@@ -31,9 +31,7 @@ class SpecialVocab:
         self._load(Path(path))
 
     def __repr__(self) -> str:
-        return '<SpecialVocab with {} merges, special tokens {}, add special tokens {}>'.format(
-            len(self.merges), self.special_token_ids or "unset", self.add_special_token or "unset",
-        )
+        return f'<SpecialVocab with {len(self.merges)} merges, special tokens {self.special_token_ids or "unset"}, add special tokens {self.add_special_token or "unset"}>'
 
     def add_to_gguf(self, gw: GGUFWriter, quiet: bool = False) -> None:
         if self.merges:

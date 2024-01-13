@@ -175,7 +175,7 @@ class GGUFWriter:
             self.kv_data += encoded_val
         elif vtype == GGUFValueType.ARRAY and isinstance(val, Sequence) and val:
             ltype = GGUFValueType.get_type(val[0])
-            if not all(GGUFValueType.get_type(i) is ltype for i in val[1:]):
+            if any(GGUFValueType.get_type(i) is not ltype for i in val[1:]):
                 raise ValueError("All items in a GGUF array should be of the same type")
             self.kv_data += self._pack("I", ltype)
             self.kv_data += self._pack("Q", len(val))
